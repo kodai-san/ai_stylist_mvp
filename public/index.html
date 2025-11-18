@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Stylist MVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#f6f9fb;
+      --fg:#0f172a;
+      --muted:#475569;
+      --border:#e2e8f0;
+      --card:#ffffff;
+      --card-soft:#fbfdff;
+      --accent:#22c55e;
+      --accent-2:#16a34a;
+      --accent-3:#86efac;
+      --shadow:0 12px 28px rgba(2,6,23,.08);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    }
+    header{
+      position:sticky; top:0; z-index:50;
+      background:linear-gradient(90deg,#e9f9f0,#f0fff4);
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1160px; margin:0 auto; padding:16px 20px;}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.2px;}
+    .logo{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:34px; height:34px; border-radius:10px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:#fff; font-weight:900; box-shadow:0 8px 18px rgba(34,197,94,.25);
+    }
+    .subtitle{color:var(--muted); font-size:13px;}
+    .container{max-width:1160px; margin:22px auto; padding:0 20px;}
+    .panel{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;}
+
+    .controls{display:grid; grid-template-columns: 1.2fr .8fr .8fr 1.2fr auto; gap:14px; align-items:end;}
+    @media (max-width: 980px){ .controls{ grid-template-columns: 1fr 1fr; } }
+
+    label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px;}
+    input[type="text"], input[type="search"], select{
+      background:var(--card-soft); color:var(--fg); border:1px solid var(--border);
+      border-radius:12px; padding:10px 12px; width:100%; outline:none;
+      transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    }
+    input:focus, select:focus{ border-color:var(--accent-3); box-shadow:0 0 0 4px rgba(134,239,172,.35); }
+
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff;
+      border:0; border-radius:12px; padding:11px 16px; font-weight:700;
+      box-shadow:0 8px 18px rgba(34,197,94,.25), 0 2px 6px rgba(34,197,94,.18);
+    }
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+
+    .row{display:flex; gap:12px; align-items:center;}
+    .switch{display:flex; align-items:center; gap:8px;}
+    .switch input[type="checkbox"]{ transform: translateY(1px); }
+
+    .stats{display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-top:14px;}
+    .stat{background:var(--card-soft); border:1px solid var(--border); border-radius:14px; padding:12px; box-shadow:var(--shadow);}
+    .label{font-size:12px; color:var(--muted);}
+    .value{font-weight:800; font-size:18px;}
+    .badge{margin-top:6px; display:inline-block; padding:3px 8px; border:1px solid var(--border); border-radius:999px; background:#f8fafc; font-size:12px; font-weight:700;}
+
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{display:inline-block; padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; cursor:pointer;}
+    .chip:hover{background:#f1f5f9}
+
+    .loader{display:none; align-items:center; gap:10px;}
+    .loader.show{display:flex}
+    .spinner{width:18px; height:18px; border:3px solid #bbf7d0; border-top-color:#16a34a; border-radius:50%; animation:spin 1s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .msg{margin-top:12px; padding:10px 12px; border-radius:12px; display:none}
+    .msg.ok{display:block; color:#166534; background:#ecfccb; border:1px solid #d9f99d}
+    .msg.error{display:block; color:#7f1d1d; background:#fee2e2; border:1px solid #fecaca}
+
+    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:18px;}
+    @media (max-width: 1000px){ .grid{ grid-template-columns: 1fr; } }
+    .card{background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:var(--shadow);}
+    .head{ padding:14px 16px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#fafcff,#f7fbff);}
+    .head h3{ margin:0; font-size:16px; }
+    .body{ padding:14px 16px; }
+    .media{
+      display:block; width:100%; height:auto; aspect-ratio:16/9; object-fit:contain; background:#fff;
+      border-bottom:1px solid var(--border);
+    }
+    .rec-grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+    @media (max-width: 780px){ .rec-grid{ grid-template-columns: 1fr; } }
+
+    .link{ color:#047857; font-weight:700; text-decoration:none; border-bottom:1px dashed #34d399; }
+    code{background:#f1f5f9; padding:2px 6px; border-radius:6px; border:1px solid #e2e8f0}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="row" style="justify-content:space-between;">
+        <div class="brand">
+          <div class="logo">AI</div>
+          <div>
+            <div>AI Stylist</div>
+            <div class="subtitle">MVP demo · single-catalog</div>
+          </div>
+        </div>
+        <div class="chip" id="envBadge" style="display:none;"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="panel">
+      <div class="controls">
+        <div>
+          <label>Product ID</label>
+          <div class="row">
+            <input type="text" id="pid" placeholder="e.g., 40361595" />
+            <button class="btn" id="btnGo">Show Recommendations</button>
+          </div>
+        </div>
+        <div>
+          <label>Top-k</label>
+          <select id="k">
+            <option>2</option>
+            <option selected>5</option>
+            <option>8</option>
+            <option>12</option>
+          </select>
+        </div>
+        <div>
+          <label>Filters</label>
+          <label class="switch"><input type="checkbox" id="exclude" checked /> <span class="muted">Exclude same category</span></label>
+        </div>
+        <div>
+          <label>Compose options</label>
+          <div class="row" style="gap:8px;">
+            <label class="switch" style="flex:1;">
+              <input type="checkbox" id="optCutout" checked />
+              <span class="muted">Cut out background</span>
+            </label>
+            <label class="switch" style="flex:1;">
+              <input type="checkbox" id="optAuto" checked />
+              <span class="muted">Align perspective (beta)</span>
+            </label>
+          </div>
+        </div>
+        <div class="loader" id="loader"><div class="spinner"></div><div>Working…</div></div>
+      </div>
+
+      <div class="stats" id="statsRow" style="display:none;">
+        <div class="stat"><div class="label">CSV rows</div><div class="value" id="statCsv">—</div><div class="badge">dataset</div></div>
+        <div class="stat"><div class="label">Vectors</div><div class="value" id="statVec">—</div><div class="badge">embeddings</div></div>
+        <div class="stat"><div class="label">Index size</div><div class="value" id="statIdx">—</div><div class="badge">FAISS</div></div>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <div style="flex:1 1 480px;">
+          <label>Samples</label>
+          <div class="chips" id="samples"></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <div style="flex:1 1 520px;">
+          <label for="q">Quick find (text → product)</label>
+          <div class="row">
+            <input id="q" type="search" placeholder="Try: minimalist wood chair" style="flex:1 1 auto;"/>
+            <button class="btn" id="btnSearch">Search</button>
+          </div>
+          <div class="chips" id="searchHits" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="grid" id="app" style="opacity:0; transform: translateY(6px); transition: all .25s ease;"></div>
+  </div>
+
+  <script>
+    // --- API helper (same-origin first, then localhost:8000) ---
+    const API_BASES = [window.location.origin, "http://127.0.0.1:8000"];
+
+    async function apiFetch(path, options = {}) {
+      let lastErr = null;
+      for (const base of API_BASES) {
+        try {
+          const res = await fetch(base.replace(/\/$/, "") + path, options);
+          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+          return await res.json();
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr || new Error("API unreachable");
+    }
+
+    function setMsg(text, type = "error") {
+      const el = document.getElementById("msg");
+      el.className = "msg " + (type === "ok" ? "ok" : "error");
+      el.textContent = text || "";
+    }
+
+    function setLoading(isLoading) {
+      const loader = document.getElementById("loader");
+      const btnGo = document.getElementById("btnGo");
+      const btnSearch = document.getElementById("btnSearch");
+      loader.classList.toggle("show", !!isLoading);
+      btnGo.disabled = !!isLoading;
+      btnSearch.disabled = !!isLoading;
+    }
+
+    function priceFmt(x){
+      if(!x) return "—";
+      if(typeof x === "number") return "¥" + x.toLocaleString("ja-JP");
+      const n = parseFloat(String(x).replace(/[^\d.]/g,''));
+      return isFinite(n) ? "¥" + n.toLocaleString("ja-JP") : String(x);
+    }
+
+    function imgHTML(url, alt){
+      const safe = url || "https://via.placeholder.com/1200x675/ffffff/94a3b8?text=No+image";
+      return `<img class="media" src="${safe}" alt="${(alt||"").replace(/"/g,'&quot;')}"
+               onerror="this.onerror=null; this.src='https://via.placeholder.com/1200x675/f8fafc/94a3b8?text=Image+not+found';" />`;
+    }
+
+    function productCard(title, p){
+      const img = imgHTML(p?.image_url, p?.product_name || p?.product_id);
+      const price = priceFmt(p?.price);
+      const link = p?.page_url ? `<a class="link" href="${p.page_url}" target="_blank">Open →</a>` : "";
+      const desc = p?.description ? `<div class="muted" style="margin-top:6px;">${p.description}</div>` : "";
+      return `
+        <div class="card">
+          <div class="head"><h3>${title}</h3></div>
+          ${img}
+          <div class="body">
+            <div class="chip">${p?.product_id || "—"}</div>
+            <div style="margin-top:4px;">${p?.category || "—"} · ${price}</div>
+            ${desc}
+            <div style="margin-top:10px;">${link}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderResult(data, k) {
+      const app = document.getElementById("app");
+      const base = data.base;
+      const recs = (data.recommendations || []).slice(0, k);
+
+      const left = productCard("Base Product", base);
+
+      const right = `
+        <div class="card">
+          <div class="head"><h3>Our AI Recommends</h3></div>
+          <div class="body">
+            <div class="rec-grid">
+              ${recs.map(r => `
+                <div style="border:1px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; box-shadow: var(--shadow);">
+                  ${imgHTML(r.image_url, r.product_name || r.product_id)}
+                  <div style="padding:12px;">
+                    <div style="font-weight:800;">${r.product_id || "Recommended item"}</div>
+                    <div class="muted" style="margin-top:2px;">${r.category || "—"} · ${priceFmt(r.price) || "—"}</div>
+                    ${r.description ? `<div class="muted" style="margin-top:6px;">${r.description}</div>` : ""}
+                    ${r.page_url ? `<div style="margin-top:8px;"><a class="link" href="${r.page_url}" target="_blank">Open →</a></div>` : ""}
+                  </div>
+                </div>
+              `).join("")}
+              ${recs.length === 0 ? `<div class="muted">No recommendations found.</div>` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Composed (aligned) image for top-1 recommendation via /compose
+      let composed = "";
+      if (recs.length > 0 && base && base.product_id && recs[0].product_id) {
+        const cutout = document.getElementById("optCutout")?.checked ? 1 : 0;
+        const auto   = document.getElementById("optAuto")?.checked ? 1 : 0;
+        const compURL = `/compose/${encodeURIComponent(base.product_id)}/${encodeURIComponent(recs[0].product_id)}?cutout=${cutout}&bg=white&auto=${auto}`;
+        composed = `
+          <div class="card">
+            <div class="head"><h3>Composed (aligned, top-1)</h3></div>
+            <img class="media" src="${compURL}" alt="composed preview"
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/1200x675/ECFDF5/065F46?text=Composite+failed';" />
+            <div class="body">
+              <div class="muted">Served by <code>/compose/{base}/{rec}</code> with current options.</div>
+            </div>
+          </div>`;
+      }
+
+      app.innerHTML = left + right + composed;
+      requestAnimationFrame(() => { app.style.opacity = 1; app.style.transform = "translateY(0)"; });
+    }
+
+    async function go() {
+      setMsg(""); setLoading(true);
+      const pid = document.getElementById("pid").value.trim();
+      const k = parseInt(document.getElementById("k").value || "2", 10);
+      const exclude = document.getElementById("exclude").checked ? 1 : 0;
+      if (!pid) { setMsg("Please enter a product_id or click a sample."); setLoading(false); return; }
+      try {
+        // /recommendations/{product_id}?k=&exclude_same_category=
+        const data = await apiFetch(`/recommendations/${encodeURIComponent(pid)}?k=${k}&exclude_same_category=${exclude}`);
+        renderResult(data, k);
+      } catch (e) {
+        const msg = String(e.message || e);
+        if (msg.startsWith("404")) setMsg("product_id not found in vectors. Use a sample below or rebuild embeddings.");
+        else setMsg("Fetch failed: " + msg);
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function doSearch() {
+      setMsg(""); setLoading(true);
+      const q = document.getElementById("q").value.trim();
+      const hitsEl = document.getElementById("searchHits");
+      hitsEl.innerHTML = "";
+      if (!q) { setLoading(false); return; }
+      try {
+        const s = await apiFetch(`/search?q=${encodeURIComponent(q)}&k=8`);
+        const items = s.results || [];
+        if (!items.length) {
+          hitsEl.innerHTML = `<span class="muted">No matches.</span>`;
+          return;
+        }
+        hitsEl.innerHTML = items.map(it =>
+          `<span class="chip" title="${(it.product_name||"").replace(/"/g,'&quot;')}"
+                  onclick="document.getElementById('pid').value='${it.product_id}'; document.getElementById('pid').focus();">
+            ${it.product_id}
+          </span>`
+        ).join("");
+      } catch (e) {
+        setMsg("Search failed: " + (e.message || e), "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function loadSamples() {
+      try {
+        const s = await apiFetch('/debug/status');
+        const ids = s.sample_ids || [];
+        const samplesEl = document.getElementById('samples');
+
+        // show stats
+        const statsRow = document.getElementById('statsRow');
+        if (s.csv_rows != null && s.vectors != null && s.index_size != null) {
+          statsRow.style.display = 'grid';
+          document.getElementById('statCsv').textContent = s.csv_rows;
+          document.getElementById('statVec').textContent = s.vectors;
+          document.getElementById('statIdx').textContent = s.index_size;
+        }
+
+        // env badge
+        const env = document.getElementById('envBadge');
+        env.style.display = 'inline-block';
+        env.textContent = window.location.origin;
+
+        // samples
+        if (ids.length) {
+          document.getElementById('pid').value = ids[0];
+          samplesEl.innerHTML = ids.slice(0, 12).map(id =>
+            `<span class="chip" onclick="document.getElementById('pid').value='${id}';">${id}</span>`
+          ).join("");
+        } else {
+          samplesEl.innerHTML = `<span class="muted">No sample IDs available. Build embeddings & index first.</span>`;
+        }
+      } catch {}
+    }
+
+    // events
+    document.getElementById("btnGo").addEventListener("click", go);
+    document.getElementById("pid").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+    document.getElementById("btnSearch").addEventListener("click", doSearch);
+    document.getElementById("q").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+    document.getElementById("optCutout").addEventListener("change", go);
+    document.getElementById("optAuto").addEventListener("change", go);
+
+    loadSamples();
+  </script>
+</body>
+</html>

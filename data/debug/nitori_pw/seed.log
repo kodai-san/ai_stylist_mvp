@@ -1,0 +1,4 @@
+2025-10-17 03:20:33,431 INFO == Nitori Playwright seeder start ==
+2025-10-17 03:20:33,433 DEBUG Using proactor: IocpProactor
+2025-10-17 03:20:35,244 INFO == category Bed => https://www.nitori-net.jp/ec/cat/Bed/1/ ==
+2025-10-17 03:20:35,244 INFO [goto] https://www.nitori-net.jp/ec/cat/Bed/1/

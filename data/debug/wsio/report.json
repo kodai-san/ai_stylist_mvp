@@ -1,0 +1,46 @@
+{
+  "started_at": "2025-10-17T01:48:52.141091Z",
+  "base_url": "https://webscraper.io/test-sites/e-commerce/static",
+  "categories": [
+    "computers/laptops",
+    "computers/tablets"
+  ],
+  "rate_limit": 0.5,
+  "pages_requested": 3,
+  "per_category": {
+    "laptops": {
+      "pages": 3,
+      "cards": 18,
+      "parsed": 18,
+      "404_pages": 0,
+      "zero_cards_pages": 0,
+      "no_name_link": 0,
+      "empty_name": 0,
+      "no_href": 0,
+      "no_image": 0,
+      "no_price": 0
+    },
+    "tablets": {
+      "pages": 3,
+      "cards": 18,
+      "parsed": 18,
+      "404_pages": 0,
+      "zero_cards_pages": 0,
+      "no_name_link": 0,
+      "empty_name": 0,
+      "no_href": 0,
+      "no_image": 0,
+      "no_price": 0
+    }
+  },
+  "totals": {
+    "cards": 36,
+    "parsed": 36,
+    "no_name_link": 0,
+    "empty_name": 0,
+    "no_href": 0,
+    "no_image": 0,
+    "no_price": 0
+  },
+  "finished_at": "2025-10-17T01:48:58.497729Z"
+}
